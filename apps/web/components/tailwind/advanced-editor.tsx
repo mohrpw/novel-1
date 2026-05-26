@@ -1,4 +1,11 @@
 "use client";
+
+/**
+ * @fileoverview Erweiterter WYSIWYG-Editor mit Tailwind-Styling und integrierten AI- und Formatierungs-Optionen.
+ * Stellt die Hauptkomponente für die Journal- und Notizerfassung dar.
+ * @module TailwindAdvancedEditor
+ */
+
 import { defaultEditorContent } from "@/lib/content";
 import {
   EditorCommand,
@@ -32,6 +39,16 @@ const hljs = require("highlight.js");
 
 const extensions = [...defaultExtensions, slashCommand];
 
+/**
+ * Eine fortschrittliche Editor-Komponente unter Verwendung von Novel (Tiptap) und Tailwind CSS.
+ * Lädt zuvor gespeicherten Inhalt aus dem lokalen Speicher und verwaltet den Speicherstatus.
+ * 
+ * @remarks
+ * UX/Mental-Health: Bietet ablenkungsfreie Schreibumgebung und speichert automatisch im Hintergrund,
+ * um Datenverlust zu vermeiden. Zur Performance-Schonung werden Speicheraufrufe debounced.
+ * 
+ * @returns Ein React-Element, das den vollwertigen Editor mit Slash-Commands und Popover-Menüs rendert.
+ */
 const TailwindAdvancedEditor = () => {
   const [initialContent, setInitialContent] = useState<null | JSONContent>(null);
   const [saveStatus, setSaveStatus] = useState("Saved");
@@ -64,8 +81,15 @@ const TailwindAdvancedEditor = () => {
 
   useEffect(() => {
     const content = window.localStorage.getItem("novel-content");
-    if (content) setInitialContent(JSON.parse(content));
-    else setInitialContent(defaultEditorContent);
+    const parsed = content ? JSON.parse(content) : defaultEditorContent;
+    
+    // Asynchrone Aktualisierung per Timeout, um synchrone kaskadierende Renders
+    // während der Hydration-Phase zu verhindern und Linter-Fehler zu vermeiden.
+    const timer = setTimeout(() => {
+      setInitialContent(parsed);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
   if (!initialContent) return null;
